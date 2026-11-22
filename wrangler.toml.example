@@ -1,0 +1,28 @@
+# Copy to wrangler.toml and replace the placeholders:  cp wrangler.toml.example wrangler.toml
+name = "edge-visitor-log"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+# Optional: serve it on your own subdomain
+# routes = [{ pattern = "visits.example.com", custom_domain = true }]
+
+[vars]
+# Sites allowed to send page views, comma-separated, exactly as browsers send the Origin header
+SITE_ORIGINS = "https://example.com,https://www.example.com"
+# Visits older than this are deleted by the cron trigger (0 = keep forever)
+RETENTION_DAYS = "365"
+# "false" records browsers that send Do Not Track / Global Privacy Control too
+RESPECT_DNT = "true"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "edge-visitor-log"
+# Printed by: npx wrangler d1 create edge-visitor-log
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[triggers]
+# Every hour: refresh the Tor exit list when it's over 6 hours old, delete expired visits
+crons = ["23 * * * *"]
+
+# Secret - never put it in this file:
+#   npx wrangler secret put API_TOKEN   # bearer token for /api/*

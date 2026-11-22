@@ -1,0 +1,34 @@
+{
+  "name": "edge-visitor-log",
+  "version": "1.0.0",
+  "description": "Privacy-friendly visitor log on Cloudflare Workers + D1: no cookies, IP and network from Cloudflare, VPN / Tor / data-centre detection, and a JSON API.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./beacon": "./src/beacon.js",
+    "./network": "./src/network.js",
+    "./tor": "./src/tor.js",
+    "./visitors": "./src/visitors.js"
+  },
+  "files": [
+    "src",
+    "client",
+    "schema.sql"
+  ],
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute edge-visitor-log --remote --file schema.sql",
+    "db:init:local": "wrangler d1 execute edge-visitor-log --local --file schema.sql",
+    "sync-script": "node scripts-sync.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "devDependencies": {
+    "wrangler": "4.156.0"
+  }
+}
