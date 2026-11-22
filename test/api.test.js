@@ -23,6 +23,8 @@ test('/api/visitors groups page views per visitor with totals', async () => {
   assert.equal(body.stats.views, 3);
   assert.equal(body.stats.visitors, 2);
   assert.deepEqual(body.stats.masked, { vpn: 1 });
+  assert.deepEqual(body.stats.connections, { datacenter: 1, residential: 1 });
+  assert.ok(body.visitors.every((visitor) => visitor.connection === (visitor.network ? 'datacenter' : 'residential')));
   assert.deepEqual(body.stats.topPages[0], { name: '/', count: 2 });
   const comcast = body.visitors.find((v) => v.ip === '198.51.100.1');
   assert.equal(comcast.views, 2);

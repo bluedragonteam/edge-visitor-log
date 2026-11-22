@@ -52,6 +52,8 @@ export const groupVisits = (visits) => {
         org: visit.org,
         asn: visit.asn,
         network: visit.network || null,
+        // 'datacenter' (VPN, Tor, relay, cloud or hosting) or 'residential' (home, office or mobile network)
+        connection: visit.network ? 'datacenter' : 'residential',
         browser: browserName(visit.userAgent),
         firstAt: visit.at,
         lastAt: visit.at,
@@ -95,6 +97,11 @@ export const summarize = (visits, visitors, now = new Date()) => {
       if (visitor.network) counts[visitor.network.kind] = (counts[visitor.network.kind] || 0) + 1;
       return counts;
     }, {}),
+    // Data centre vs residential visitors
+    connections: visitors.reduce((counts, visitor) => {
+      counts[visitor.network ? 'datacenter' : 'residential']++;
+      return counts;
+    }, { datacenter: 0, residential: 0 }),
     topPages: countBy(visits, (visit) => visit.path),
     topReferrers: countBy(visits, (visit) => referrerHost(visit.referrer)),
     countries: countBy(visitors, (visitor) => visitor.country)

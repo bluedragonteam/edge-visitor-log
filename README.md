@@ -31,7 +31,9 @@ Analytics tools count visitors. When you sell to businesses, the useful question
   | `relay` | iCloud Private Relay or Cloudflare WARP (Cloudflare, Akamai, Fastly egress). Usually an ordinary person whose real IP is hidden |
   | `hosting` | Cloud and hosting networks (AWS, Google Cloud, Azure, DigitalOcean, Hetzner, OVH...): proxies, bots, or someone on a cloud machine |
 
-  Decided from the ASN and network name (see [`src/network.js`](src/network.js)). It's a strong hint, not proof: VPNs that rent home IPs ("residential proxies") look ordinary.
+  Decided from the ASN and network name (see [`src/network.js`](src/network.js)). Most VPNs (Astrill, ExpressVPN, Surfshark...) don't own their networks: they rent servers, so Cloudflare reports the server company ("Limestone Networks", "Leaseweb", "M247"), never the VPN's name. That's why the list covers the dedicated-server and VPS companies VPNs rent from, each checked against its registry (RDAP) record. It's a strong hint, not proof: VPNs that rent home IPs ("residential proxies") look ordinary.
+
+  The simple answer is in `connection`: **`datacenter`** (any of the labels above) or **`residential`** (a home, office or mobile network, as far as the lists can tell).
 - **Visitors, not just hits.** `/api/visitors` groups page views by IP and browser and returns totals, top pages, referring sites, countries and counts of masked connections.
 - **Respects opt-outs.** Browsers that send Do Not Track or Global Privacy Control are not recorded (configurable). Bots, link previews and other origins are dropped.
 - **Your own visits hidden.** Add your office and home IPs to the ignore list, or `POST /api/ignored-ips` with no body to ignore the IP you're calling from.
@@ -70,7 +72,7 @@ All `/api/*` calls need `Authorization: Bearer <API_TOKEN>`.
 
 | Call | Returns |
 |---|---|
-| `GET /api/visitors?days=30&limit=200&includeIgnored=1` | `{ days, stats, visitors[] }`. `stats` has `views`, `visitors`, `visitorsLast24h`, `masked` (`{vpn, tor, relay, hosting}`), `topPages`, `topReferrers`, `countries`. Each visitor has `ip`, `org`, `asn`, `city`, `region`, `country`, `network` (`{kind, provider}` or `null`), `browser`, `views`, `firstAt`, `lastAt`, `referrer`, `utm`, `pages[]` |
+| `GET /api/visitors?days=30&limit=200&includeIgnored=1` | `{ days, stats, visitors[] }`. `stats` has `views`, `visitors`, `visitorsLast24h`, `masked` (`{vpn, tor, relay, hosting}`), `connections` (`{datacenter, residential}`), `topPages`, `topReferrers`, `countries`. Each visitor has `ip`, `org`, `asn`, `city`, `region`, `country`, `network` (`{kind, provider}` or `null`), `connection` (`datacenter` or `residential`), `browser`, `views`, `firstAt`, `lastAt`, `referrer`, `utm`, `pages[]` |
 | `GET /api/visits?after=0&limit=500` | Raw visits oldest first, and `next` (the id to pass as `after`), for copying into your own database |
 | `GET /api/ignored-ips` | `{ ignored: [{ ip, label, createdAt }] }` |
 | `POST /api/ignored-ips` `{ "ip": "...", "label": "office" }` | Ignore an IP. Without `ip`, the caller's own IP |
@@ -83,14 +85,19 @@ curl -H "Authorization: Bearer $API_TOKEN" "https://visits.example.com/api/visit
 ## Using the modules in your own backend
 
 ```js
-import { classifyNetwork } from 'edge-visitor-log/network';
+import { classifyNetwork, connectionType } from 'edge-visitor-log/network';
 import { parseTorList } from 'edge-visitor-log/tor';
 
 classifyNetwork({ org: 'M247 Europe SRL', asn: 9009 });
 // { kind: 'vpn', label: 'VPN', provider: 'M247', hint: '...' }
+
+connectionType({ org: 'Limestone Networks, Inc.', asn: 46475 });   // an Astrill VPN server
+// { type: 'datacenter', label: 'Data centre', network: { kind: 'hosting', provider: 'Limestone Networks', ... } }
+connectionType({ org: 'Comcast Cable Communications, LLC', asn: 7922 });
+// { type: 'residential', label: 'Residential', network: null }
 ```
 
-Install from GitHub: `npm install github:bluedragonteam/edge-visitor-log#v1.0.0`.
+Install from GitHub: `npm install github:bluedragonteam/edge-visitor-log#v1.1.0`.
 
 ## Privacy
 
